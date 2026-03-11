@@ -594,9 +594,12 @@ const MadKoreanWebsite = () => {
       <nav style={{ position: 'fixed', top: 0, width: '100%', backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(12px)', zIndex: 9999, borderBottom: '1px solid #1f2937' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* 로고 */}
-          <button onClick={() => handleNavigate('home')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem', fontWeight: 700 }}>
-            <span style={{ color: '#fff' }}>MAD</span>
-            <span style={{ color: '#ef4444' }}>KOREAN</span>
+          <button onClick={() => handleNavigate('home')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <img src="/logo.png" alt="Mad Korean Logo" style={{ width: '36px', height: '36px', borderRadius: '8px' }} />
+            <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>
+              <span style={{ color: '#fff' }}>MAD</span>
+              <span style={{ color: '#ef4444' }}>KOREAN</span>
+            </span>
           </button>
 
           {/* 데스크탑 메뉴 */}
