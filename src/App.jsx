@@ -89,115 +89,137 @@ const Particles = () => {
     resize();
     window.addEventListener('resize', resize);
 
-    // 번개 세그먼트 생성 함수 (지그재그)
-    const createBolt = (canvas) => {
-      const x = Math.random() * canvas.width;
+    const createBolt = () => {
+      const x = canvas.width * (0.1 + Math.random() * 0.8);
       const segments = [];
-      let cx = x, cy = 0;
-      const totalH = canvas.height * (0.4 + Math.random() * 0.5);
-      const steps = 8 + Math.floor(Math.random() * 8);
+      let cx = x, cy = -10;
+      const totalH = canvas.height * (0.35 + Math.random() * 0.45);
+      const steps = 12 + Math.floor(Math.random() * 10);
       for (let i = 0; i <= steps; i++) {
         segments.push({ x: cx, y: cy });
         cy += totalH / steps;
-        cx += (Math.random() - 0.5) * 80;
+        cx += (Math.random() - 0.5) * 55;
       }
-      return {
-        segments,
-        alpha: 0,
-        phase: 'in', // in → hold → out
-        holdTimer: 0,
-        width: Math.random() * 1.5 + 0.5,
-        glowColor: Math.random() > 0.5 ? '239,68,68' : '255,120,80',
-        branches: Math.random() > 0.6 ? createBranch(segments) : null,
-      };
+
+      // 가지: 메인 세그먼트 중간에서 분기
+      const branches = [];
+      if (Math.random() > 0.4) {
+        const si = Math.floor(steps * 0.3 + Math.random() * steps * 0.35);
+        let bx = segments[si].x, by = segments[si].y;
+        const bsegs = [{ x: bx, y: by }];
+        const bsteps = 4 + Math.floor(Math.random() * 4);
+        for (let j = 0; j < bsteps; j++) {
+          bx += (Math.random() - 0.5) * 40 + (Math.random() > 0.5 ? 15 : -15);
+          by += 20 + Math.random() * 18;
+          bsegs.push({ x: bx, y: by });
+        }
+        branches.push(bsegs);
+      }
+
+      return { segments, branches, alpha: 0, phase: 'in', holdTimer: 2 + Math.floor(Math.random() * 4) };
     };
 
-    const createBranch = (segments) => {
-      const startIdx = Math.floor(segments.length * 0.3 + Math.random() * segments.length * 0.4);
-      const start = segments[startIdx];
-      const branch = [{ x: start.x, y: start.y }];
-      let bx = start.x, by = start.y;
-      const steps = 3 + Math.floor(Math.random() * 4);
-      for (let i = 0; i < steps; i++) {
-        bx += (Math.random() - 0.5) * 60 + (Math.random() > 0.5 ? 20 : -20);
-        by += 30 + Math.random() * 20;
-        branch.push({ x: bx, y: by });
-      }
-      return branch;
+    const drawPath = (segs, lineWidth, color, alpha, blur) => {
+      if (segs.length < 2) return;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.shadowBlur = blur;
+      ctx.shadowColor = color;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      segs.forEach((s, i) => i === 0 ? ctx.moveTo(s.x, s.y) : ctx.lineTo(s.x, s.y));
+      ctx.stroke();
+      ctx.restore();
     };
 
     const drawBolt = (bolt) => {
       if (bolt.alpha <= 0) return;
-      const { segments, alpha, width, glowColor, branches } = bolt;
+      const { segments, branches, alpha } = bolt;
 
-      // 글로우 효과 (외곽)
-      ctx.save();
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = `rgba(${glowColor},${alpha * 0.8})`;
-      ctx.strokeStyle = `rgba(${glowColor},${alpha * 0.4})`;
-      ctx.lineWidth = width + 4;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      segments.forEach((s, i) => i === 0 ? ctx.moveTo(s.x, s.y) : ctx.lineTo(s.x, s.y));
-      ctx.stroke();
+      // ── 주변 공간 플래시 효과 ──
+      // 번개 중심 X 기준으로 radial gradient로 주변을 밝힘
+      if (alpha > 0.05) {
+        const midSeg = segments[Math.floor(segments.length / 2)];
+        const flashIntensity = alpha * 0.13;
+        const grad = ctx.createRadialGradient(midSeg.x, midSeg.y, 0, midSeg.x, midSeg.y, 320);
+        grad.addColorStop(0, `rgba(180,40,40,${flashIntensity})`);
+        grad.addColorStop(0.4, `rgba(120,20,20,${flashIntensity * 0.5})`);
+        grad.addColorStop(1, `rgba(0,0,0,0)`);
+        ctx.save();
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
 
-      // 코어 (밝은 흰빛)
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = `rgba(255,200,200,${alpha})`;
-      ctx.strokeStyle = `rgba(255,240,240,${alpha * 0.95})`;
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      segments.forEach((s, i) => i === 0 ? ctx.moveTo(s.x, s.y) : ctx.lineTo(s.x, s.y));
-      ctx.stroke();
+        // 번개 상단(타격 시작점) 주변 강한 플래시
+        const topSeg = segments[0];
+        const topFlash = ctx.createRadialGradient(topSeg.x, topSeg.y, 0, topSeg.x, topSeg.y, 160);
+        topFlash.addColorStop(0, `rgba(255,180,180,${alpha * 0.18})`);
+        topFlash.addColorStop(0.5, `rgba(200,50,50,${alpha * 0.08})`);
+        topFlash.addColorStop(1, `rgba(0,0,0,0)`);
+        ctx.save();
+        ctx.fillStyle = topFlash;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
 
-      // 가지
-      if (branches) {
-        ctx.strokeStyle = `rgba(${glowColor},${alpha * 0.5})`;
-        ctx.lineWidth = width * 0.5;
-        ctx.shadowBlur = 6;
-        ctx.beginPath();
-        branches.forEach((s, i) => i === 0 ? ctx.moveTo(s.x, s.y) : ctx.lineTo(s.x, s.y));
-        ctx.stroke();
+        // 번개 끝점(땅 타격) 강한 임팩트 플래시
+        const endSeg = segments[segments.length - 1];
+        const endFlash = ctx.createRadialGradient(endSeg.x, endSeg.y, 0, endSeg.x, endSeg.y, 200);
+        endFlash.addColorStop(0, `rgba(255,200,200,${alpha * 0.22})`);
+        endFlash.addColorStop(0.3, `rgba(239,68,68,${alpha * 0.1})`);
+        endFlash.addColorStop(1, `rgba(0,0,0,0)`);
+        ctx.save();
+        ctx.fillStyle = endFlash;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
       }
-      ctx.restore();
+
+      // 1단계: 넓은 글로우 (가장 바깥)
+      drawPath(segments, 8, 'rgba(239,68,68,1)', alpha * 0.07, 40);
+      // 2단계: 중간 글로우
+      drawPath(segments, 2.5, 'rgba(239,68,68,1)', alpha * 0.3, 16);
+      // 3단계: 코어 (얇고 밝은 흰빛)
+      drawPath(segments, 0.7, 'rgba(255,230,230,1)', alpha * 0.95, 4);
+
+      branches.forEach(b => {
+        drawPath(b, 4, 'rgba(239,68,68,1)', alpha * 0.05, 24);
+        drawPath(b, 1.2, 'rgba(239,68,68,1)', alpha * 0.2, 8);
+        drawPath(b, 0.4, 'rgba(255,220,220,1)', alpha * 0.7, 2);
+      });
     };
 
-    // 번개 풀 관리
     const bolts = [];
-    const MAX_BOLTS = 3;
     let spawnTimer = 0;
-    const SPAWN_INTERVAL = 60 + Math.random() * 80;
-
+    let nextSpawn = 50 + Math.random() * 90;
     let animId;
+
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // 새 번개 스폰
       spawnTimer++;
-      if (spawnTimer > SPAWN_INTERVAL && bolts.length < MAX_BOLTS) {
-        bolts.push(createBolt(canvas));
-        spawnTimer = 0 + Math.random() * 40;
+      if (spawnTimer > nextSpawn && bolts.length < 3) {
+        bolts.push(createBolt());
+        spawnTimer = 0;
+        nextSpawn = 55 + Math.random() * 100;
       }
 
-      // 번개 업데이트 & 그리기
       for (let i = bolts.length - 1; i >= 0; i--) {
         const b = bolts[i];
         if (b.phase === 'in') {
-          b.alpha += 0.18;
-          if (b.alpha >= 1) { b.alpha = 1; b.phase = 'hold'; b.holdTimer = 4 + Math.floor(Math.random() * 6); }
+          b.alpha += 0.22;
+          if (b.alpha >= 1) { b.alpha = 1; b.phase = 'hold'; }
         } else if (b.phase === 'hold') {
+          // 미세 깜빡임
+          b.alpha = 0.85 + Math.sin(Date.now() * 0.08) * 0.15;
           b.holdTimer--;
-          // 깜빡임
-          b.alpha = 0.7 + Math.random() * 0.3;
           if (b.holdTimer <= 0) b.phase = 'out';
         } else {
-          b.alpha -= 0.08;
+          b.alpha -= 0.06;
           if (b.alpha <= 0) { bolts.splice(i, 1); continue; }
         }
         drawBolt(b);
       }
-
       animId = requestAnimationFrame(animate);
     };
     animate();
