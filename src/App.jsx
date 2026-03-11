@@ -621,28 +621,34 @@ const ProcessPage = ({ t, language, process }) => {
         <h1 className="text-5xl md:text-6xl font-bold mb-4">{t?.process?.title}</h1>
         <p className="text-xl text-gray-400">{t?.process?.subtitle}</p>
       </div>
-      <div className="relative">
-        <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-red-500 via-red-500/50 to-transparent"></div>
-        <div className="space-y-16">
-          {process.map((step, i) => (
-            <div key={i} className="mk-fade relative grid md:grid-cols-2 gap-8 items-center">
-              <div className={i % 2 === 0 ? 'md:text-right md:pr-12' : 'md:pl-12 md:col-start-2'}>
-                <div className="inline-block bg-red-500/10 border border-red-500/30 rounded-full px-4 py-1 mb-4">
-                  <span className="text-red-500 font-semibold">{step.step}</span>
+      <div style={{ position: "relative" }}>
+        <div style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 2, background: "linear-gradient(to bottom, #ef4444, transparent)", transform: "translateX(-50%)" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 52 }}>
+          {process.map((s, i) => (
+            <div key={i} className="mk-fade" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", position: "relative", alignItems: "start" }}>
+              {i % 2 === 0 ? (
+                <div style={{ textAlign: "right", paddingRight: 50 }}>
+                  <span style={{ display: "inline-block", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 99, padding: "2px 12px", fontSize: 12, color: "#ef4444", fontWeight: 600, marginBottom: 8 }}>{s.step}</span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 10, marginBottom: 8 }}>
+                    <h3 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: "#fff" }}>{language === "en" ? s.title_en : s.title_ko}</h3>
+                    <span style={{ fontSize: 24 }}>{s.icon || "🚀"}</span>
+                  </div>
+                  <p style={{ color: "#9ca3af", fontSize: 14, lineHeight: 1.7, margin: "0 0 8px" }}>{language === "en" ? s.desc_en : s.desc_ko}</p>
+                  {s.duration && <span style={{ color: "#6b7280", fontSize: 12 }}>⏱ {s.duration}</span>}
                 </div>
-                <h3 className="text-3xl font-bold mb-3">{language === 'en' ? step.title_en : step.title_ko}</h3>
-                <p className="text-gray-400 leading-relaxed mb-4">{language === 'en' ? step.desc_en : step.desc_ko}</p>
-                {step.duration && <div className="flex items-center gap-2 text-sm text-gray-500"><Clock size={16} /><span>{step.duration}</span></div>}
-              </div>
-              <div className="hidden md:block absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <div className="w-6 h-6 bg-red-500 rounded-full border-4 border-black"></div>
-              </div>
-              <div className={i % 2 === 0 ? 'md:col-start-2 md:pl-12' : 'md:pr-12'}>
-                <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg p-8 hover:border-red-500/50 transition">
-                  <div className="text-6xl mb-4">{step.icon || '🚀'}</div>
-                  <div className="text-red-500 text-sm font-semibold">{language === 'en' ? `Step ${i + 1}` : `단계 ${i + 1}`}</div>
+              ) : <div />}
+              {i % 2 !== 0 ? (
+                <div style={{ paddingLeft: 50 }}>
+                  <span style={{ display: "inline-block", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 99, padding: "2px 12px", fontSize: 12, color: "#ef4444", fontWeight: 600, marginBottom: 8 }}>{s.step}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                    <span style={{ fontSize: 24 }}>{s.icon || "🚀"}</span>
+                    <h3 style={{ fontSize: 24, fontWeight: 700, margin: 0, color: "#fff" }}>{language === "en" ? s.title_en : s.title_ko}</h3>
+                  </div>
+                  <p style={{ color: "#9ca3af", fontSize: 14, lineHeight: 1.7, margin: "0 0 8px" }}>{language === "en" ? s.desc_en : s.desc_ko}</p>
+                  {s.duration && <span style={{ color: "#6b7280", fontSize: 12 }}>⏱ {s.duration}</span>}
                 </div>
-              </div>
+              ) : <div />}
+              <div style={{ position: "absolute", left: "50%", top: 20, transform: "translateX(-50%)", width: 12, height: 12, background: "#ef4444", borderRadius: "50%", border: "3px solid #000" }} />
             </div>
           ))}
         </div>
