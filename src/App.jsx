@@ -19,7 +19,7 @@ const fallbackContent = {
   en: {
     nav: { home: 'Home', portfolio: 'Portfolio', process: 'Process', contact: 'Contact' },
     hero: { title1: 'Madly Fast.', title2: 'Madly Precise.', title3: 'Madly Korean.', subtitle: "We don't just code. We are obsessed with perfection.", cta: 'Start Your Project' },
-    engine: { title: 'The 24/7 Engine', subtitle: 'We Build While You Sleep', description: "When it's evening in the US, it's morning in Korea. The feedback you submit before leaving work is already implemented before you arrive the next day.", stat1: '< 12hr', stat1Label: 'Turnaround Time', stat2: '100%', stat2Label: 'Real-time Updates', stat3: '24/7', stat3Label: 'Development Cycle' },
+    engine: { title: 'The 24/7 Engine', subtitle: 'We Build While You Sleep', description: "When it's evening in the US, it's morning in Korea. The feedback you submit before leaving work is already implemented before you arrive the next day.", stat1: '≤ 12hr', stat1Label: 'Turnaround Time', stat2: '100%', stat2Label: 'Real-time Updates', stat3: '24/7', stat3Label: 'Development Cycle' },
     obsession: { title: 'Our Obsession', subtitle: "Why We're Different", point1Title: 'Elite Engineering', point1Desc: 'Korean developers are among the most rigorously educated in the world.', point2Title: 'Clean Code Standard', point2Desc: 'Every line is documented, tested, and built to scale.', point3Title: 'Obsessive Detail', point3Desc: "We treat your project like it's ours." },
     portfolio: { title: 'Our Work', subtitle: 'Real Problems. Real Solutions.' },
     process: { title: 'Development Process', subtitle: 'How We Turn Ideas Into Reality' },
@@ -31,7 +31,7 @@ const fallbackContent = {
   ko: {
     nav: { home: '홈', portfolio: '포트폴리오', process: '프로세스', contact: '연락하기' },
     hero: { title1: '미친듯이 빠르게.', title2: '미친듯이 정확하게.', title3: '미친듯이 한국적으로.', subtitle: '우리는 단순히 코딩하지 않습니다. 완벽함에 집착합니다.', cta: '프로젝트 시작하기' },
-    engine: { title: '24/7 엔진', subtitle: '당신이 자는 동안 우리는 만듭니다', description: '미국이 저녁일 때 한국은 아침입니다. 퇴근 전 남긴 피드백은 다음날 출근 전 이미 구현되어 있습니다.', stat1: '< 12시간', stat1Label: '피드백 반영', stat2: '100%', stat2Label: '실시간 업데이트', stat3: '24/7', stat3Label: '개발 사이클' },
+    engine: { title: '24/7 엔진', subtitle: '당신이 자는 동안 우리는 만듭니다', description: '미국이 저녁일 때 한국은 아침입니다. 퇴근 전 남긴 피드백은 다음날 출근 전 이미 구현되어 있습니다.', stat1: '≤ 12시간', stat1Label: '피드백 반영', stat2: '100%', stat2Label: '실시간 업데이트', stat3: '24/7', stat3Label: '개발 사이클' },
     obsession: { title: '우리의 집착', subtitle: '왜 우리가 다른가', point1Title: '엘리트 엔지니어링', point1Desc: '한국 개발자들은 세계에서 가장 엄격한 교육을 받습니다.', point2Title: '클린 코드 기준', point2Desc: '모든 라인은 문서화되고, 테스트되며, 확장 가능하게 작성됩니다.', point3Title: '집요한 디테일', point3Desc: '당신의 프로젝트를 우리 것처럼 다룹니다.' },
     portfolio: { title: '우리의 작업물', subtitle: '실제 문제. 실제 솔루션.' },
     process: { title: '개발 프로세스', subtitle: '아이디어를 현실로 만드는 방법' },
