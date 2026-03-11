@@ -78,37 +78,130 @@ const useCounter = (target, duration = 1500, started = false) => {
   return count;
 };
 
-// ── 파티클 컴포넌트 ──
+// ── 번개 이펙트 컴포넌트 ──
 const Particles = () => {
   const canvasRef = useRef(null);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    const particles = Array.from({ length: 60 }, () => ({
-      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-      r: Math.random() * 2.5 + 0.5,
-      dx: (Math.random() - 0.5) * 0.5, dy: (Math.random() - 0.5) * 0.5,
-      alpha: Math.random() * 0.5 + 0.1
-    }));
-    let animId;
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(220, 38, 38, ${p.alpha})`;
-        ctx.fill();
-        p.x += p.dx; p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
-      });
-      animId = requestAnimationFrame(draw);
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
+    resize();
+    window.addEventListener('resize', resize);
+
+    // 번개 세그먼트 생성 함수 (지그재그)
+    const createBolt = (canvas) => {
+      const x = Math.random() * canvas.width;
+      const segments = [];
+      let cx = x, cy = 0;
+      const totalH = canvas.height * (0.4 + Math.random() * 0.5);
+      const steps = 8 + Math.floor(Math.random() * 8);
+      for (let i = 0; i <= steps; i++) {
+        segments.push({ x: cx, y: cy });
+        cy += totalH / steps;
+        cx += (Math.random() - 0.5) * 80;
+      }
+      return {
+        segments,
+        alpha: 0,
+        phase: 'in', // in → hold → out
+        holdTimer: 0,
+        width: Math.random() * 1.5 + 0.5,
+        glowColor: Math.random() > 0.5 ? '239,68,68' : '255,120,80',
+        branches: Math.random() > 0.6 ? createBranch(segments) : null,
+      };
     };
-    draw();
-    return () => cancelAnimationFrame(animId);
+
+    const createBranch = (segments) => {
+      const startIdx = Math.floor(segments.length * 0.3 + Math.random() * segments.length * 0.4);
+      const start = segments[startIdx];
+      const branch = [{ x: start.x, y: start.y }];
+      let bx = start.x, by = start.y;
+      const steps = 3 + Math.floor(Math.random() * 4);
+      for (let i = 0; i < steps; i++) {
+        bx += (Math.random() - 0.5) * 60 + (Math.random() > 0.5 ? 20 : -20);
+        by += 30 + Math.random() * 20;
+        branch.push({ x: bx, y: by });
+      }
+      return branch;
+    };
+
+    const drawBolt = (bolt) => {
+      if (bolt.alpha <= 0) return;
+      const { segments, alpha, width, glowColor, branches } = bolt;
+
+      // 글로우 효과 (외곽)
+      ctx.save();
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = `rgba(${glowColor},${alpha * 0.8})`;
+      ctx.strokeStyle = `rgba(${glowColor},${alpha * 0.4})`;
+      ctx.lineWidth = width + 4;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      segments.forEach((s, i) => i === 0 ? ctx.moveTo(s.x, s.y) : ctx.lineTo(s.x, s.y));
+      ctx.stroke();
+
+      // 코어 (밝은 흰빛)
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = `rgba(255,200,200,${alpha})`;
+      ctx.strokeStyle = `rgba(255,240,240,${alpha * 0.95})`;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      segments.forEach((s, i) => i === 0 ? ctx.moveTo(s.x, s.y) : ctx.lineTo(s.x, s.y));
+      ctx.stroke();
+
+      // 가지
+      if (branches) {
+        ctx.strokeStyle = `rgba(${glowColor},${alpha * 0.5})`;
+        ctx.lineWidth = width * 0.5;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        branches.forEach((s, i) => i === 0 ? ctx.moveTo(s.x, s.y) : ctx.lineTo(s.x, s.y));
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
+    // 번개 풀 관리
+    const bolts = [];
+    const MAX_BOLTS = 3;
+    let spawnTimer = 0;
+    const SPAWN_INTERVAL = 60 + Math.random() * 80;
+
+    let animId;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 새 번개 스폰
+      spawnTimer++;
+      if (spawnTimer > SPAWN_INTERVAL && bolts.length < MAX_BOLTS) {
+        bolts.push(createBolt(canvas));
+        spawnTimer = 0 + Math.random() * 40;
+      }
+
+      // 번개 업데이트 & 그리기
+      for (let i = bolts.length - 1; i >= 0; i--) {
+        const b = bolts[i];
+        if (b.phase === 'in') {
+          b.alpha += 0.18;
+          if (b.alpha >= 1) { b.alpha = 1; b.phase = 'hold'; b.holdTimer = 4 + Math.floor(Math.random() * 6); }
+        } else if (b.phase === 'hold') {
+          b.holdTimer--;
+          // 깜빡임
+          b.alpha = 0.7 + Math.random() * 0.3;
+          if (b.holdTimer <= 0) b.phase = 'out';
+        } else {
+          b.alpha -= 0.08;
+          if (b.alpha <= 0) { bolts.splice(i, 1); continue; }
+        }
+        drawBolt(b);
+      }
+
+      animId = requestAnimationFrame(animate);
+    };
+    animate();
+    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize); };
   }, []);
   return <canvas ref={canvasRef} id="mk-particles" style={{ width: '100%', height: '100%' }} />;
 };
