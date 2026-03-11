@@ -701,6 +701,15 @@ const MadKoreanWebsite = () => {
         }
         setContent(contentData);
 
+        // stat1~3은 특수문자 문제로 Sheets 파싱이 불안정 → 항상 fallback으로 고정
+        ['en', 'ko'].forEach(lang => {
+          if (!contentData[lang].engine) contentData[lang].engine = {};
+          const fb = fallbackContent[lang].engine;
+          ['stat1', 'stat1Label', 'stat2', 'stat2Label', 'stat3', 'stat3Label'].forEach(k => {
+            if (!contentData[lang].engine[k]) contentData[lang].engine[k] = fb[k];
+          });
+        });
+
         const fetchSheet = async (sheetName) => {
           const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}`);
           const text = await res.text();
