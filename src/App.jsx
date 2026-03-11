@@ -713,7 +713,30 @@ const MadKoreanWebsite = () => {
         const fetchSheet = async (sheetName) => {
           const res = await fetch(`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${sheetName}`);
           const text = await res.text();
-          return text.split('\n').slice(1).filter(l => l.trim()).map(l => l.split(',').map(p => p.replace(/^"|"$/g, '').trim()));
+          // 정식 CSV 파서: 따옴표 안의 콤마/줄바꿈 올바르게 처리
+          const parseCSV = (str) => {
+            const rows = [];
+            let row = [], cur = '', inQ = false;
+            for (let i = 0; i < str.length; i++) {
+              const ch = str[i], next = str[i + 1];
+              if (inQ) {
+                if (ch === '"' && next === '"') { cur += '"'; i++; }
+                else if (ch === '"') { inQ = false; }
+                else { cur += ch; }
+              } else {
+                if (ch === '"') { inQ = true; }
+                else if (ch === ',') { row.push(cur.trim()); cur = ''; }
+                else if (ch === '\n' || (ch === '\r' && next === '\n')) {
+                  row.push(cur.trim()); rows.push(row); row = []; cur = '';
+                  if (ch === '\r') i++;
+                } else { cur += ch; }
+              }
+            }
+            if (cur || row.length) { row.push(cur.trim()); rows.push(row); }
+            return rows;
+          };
+          const rows = parseCSV(text);
+          return rows.slice(1).filter(r => r.some(c => c));
         };
 
         const portfolioRows = await fetchSheet('Portfolio');
