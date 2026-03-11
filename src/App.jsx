@@ -20,6 +20,11 @@ const MadKoreanWebsite = () => {
     devType: [],
     message: ''
   });
+  const [estimatorData, setEstimatorData] = useState({
+    projectType: '',
+    complexity: '',
+    addons: []
+  });
 
   const SHEET_ID = '1xC8EEsa4ec_H3ma1JdvMxMeO41CvCkOMpO0iJks-fek';
 
@@ -254,7 +259,52 @@ const MadKoreanWebsite = () => {
     window.location.href = mailto;
   }, [formData]);
 
+  const calculateEstimate = useCallback(() => {
+    const { projectType, complexity, addons } = estimatorData;
+    
+    const baseRanges = {
+      mobile: { simple: [10000, 15000], medium: [15000, 25000], complex: [25000, 40000] },
+      web: { simple: [5000, 8000], medium: [8000, 15000], complex: [15000, 25000] },
+      'web+mobile': { simple: [15000, 20000], medium: [20000, 35000], complex: [35000, 55000] },
+      erp: { simple: [20000, 30000], medium: [30000, 50000], complex: [50000, 80000] }
+    };
+
+    const timelineRanges = {
+      mobile: '8-12 weeks',
+      web: '6-10 weeks',
+      'web+mobile': '10-14 weeks',
+      erp: '10-16 weeks'
+    };
+
+    const addonCosts = {
+      animations: [2000, 5000],
+      api: [2000, 8000],
+      payment: [3000, 5000],
+      ai: [4000, 10000],
+      realtime: [3000, 8000],
+      analytics: [2500, 6000],
+      security: [2000, 5000]
+    };
+
+    if (!projectType || !complexity) return null;
+
+    let [minCost, maxCost] = baseRanges[projectType][complexity];
+    
+    addons.forEach(addon => {
+      const [addonMin, addonMax] = addonCosts[addon];
+      minCost += addonMin;
+      maxCost += addonMax;
+    });
+
+    return {
+      min: minCost.toLocaleString(),
+      max: maxCost.toLocaleString(),
+      timeline: timelineRanges[projectType]
+    };
+  }, [estimatorData]);
+
   const t = useMemo(() => content?.[language] || fallbackContent[language], [content, language]);
+  const estimate = calculateEstimate();
 
   if (loading || !content) {
     return (
@@ -387,15 +437,15 @@ const MadKoreanWebsite = () => {
 
       <section className="py-32 bg-gradient-to-t from-red-950/20 to-black">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-5xl md:text-6xl font-bold mb-6">{t?.cta?.title}</h2>
-          <p className="text-2xl text-gray-400 mb-12">{t?.cta?.subtitle}</p>
+          <h2 className="text-5xl md:text-6xl font-bold mb-6">{t?.cta?.title || 'Ready to Experience Mad Korean Quality?'}</h2>
+          <p className="text-2xl text-gray-400 mb-12">{t?.cta?.subtitle || "Let's build something extraordinary together."}</p>
           <button 
             onClick={() => setCurrentPage('contact')}
             className="inline-block px-12 py-5 bg-red-500 hover:bg-red-600 text-white font-bold text-xl rounded-full transition transform hover:scale-105 mb-6"
           >
-            {t?.cta?.button}
+            {t?.cta?.button || 'Get Started'}
           </button>
-          <p className="text-gray-500">{t?.cta?.email}</p>
+          <p className="text-gray-500">{t?.cta?.email || 'hello@madkorean.com'}</p>
         </div>
       </section>
     </>
@@ -501,54 +551,263 @@ const MadKoreanWebsite = () => {
 
   const ContactPage = () => (
     <section className="py-32 bg-black min-h-screen">
-      <div className="max-w-3xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16 pt-20">
-          <h1 className="text-5xl md:text-6xl font-bold mb-4">{t?.contact?.title}</h1>
-          <p className="text-xl text-gray-400">{t?.contact?.subtitle}</p>
+          <h1 className="text-5xl md:text-6xl font-bold mb-4">{t?.contact?.title || 'Start Your Project'}</h1>
+          <p className="text-xl text-gray-400">{t?.contact?.subtitle || "Let's build something extraordinary together"}</p>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <input type="text" name="name" value={formData.name} onChange={handleFormChange} placeholder={t?.contact?.namePlaceholder} required className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none transition" />
-          <input type="email" name="email" value={formData.email} onChange={handleFormChange} placeholder={t?.contact?.emailPlaceholder} required className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none transition" />
-          <input type="text" name="company" value={formData.company} onChange={handleFormChange} placeholder={t?.contact?.companyPlaceholder} className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none transition" />
-          <div>
-            <label className="block text-gray-400 mb-3">{t?.contact?.budgetLabel}</label>
-            <select name="budget" value={formData.budget} onChange={handleFormChange} required className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white focus:border-red-500 focus:outline-none transition">
-              <option value="">Select budget range</option>
-              <option value="< $20K">&lt; $20K</option>
-              <option value="$20K - $50K">$20K - $50K</option>
-              <option value="$50K - $100K">$50K - $100K</option>
-              <option value="$100K - $200K">$100K - $200K</option>
-              <option value="$200K+">$200K+</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-gray-400 mb-3">{t?.contact?.devTypeLabel}</label>
-            <div className="grid md:grid-cols-2 gap-4">
-              {[
-                { value: 'mobile', label: 'Mobile App', icon: Smartphone },
-                { value: 'web', label: 'Web Application', icon: Monitor },
-                { value: 'erp', label: 'ERP System', icon: Database },
-                { value: 'crm', label: 'CRM System', icon: Package },
-                { value: 'ecommerce', label: 'E-commerce', icon: DollarSign },
-                { value: 'other', label: 'Other', icon: Code }
-              ].map(({ value, label, icon: Icon }) => (
-                <label key={value} className="flex items-center gap-3 px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg cursor-pointer hover:border-red-500/50 transition">
-                  <input type="checkbox" name="devType" value={value} checked={formData.devType.includes(value)} onChange={handleFormChange} className="w-5 h-5 text-red-500 bg-gray-900 border-gray-700 rounded focus:ring-red-500" />
-                  <Icon size={20} className="text-red-500" />
-                  <span className="text-white">{label}</span>
-                </label>
-              ))}
+
+        <div className="grid lg:grid-cols-2 gap-12 mb-16">
+          {/* Project Estimator */}
+          <div className="bg-gradient-to-br from-gray-900 to-black border border-red-500/30 rounded-lg p-8">
+            <h2 className="text-3xl font-bold mb-2 text-red-500">Project Estimator</h2>
+            <p className="text-gray-400 mb-8">Get an instant estimate for your project</p>
+
+            <div className="space-y-6">
+              {/* Project Type */}
+              <div>
+                <label className="block text-white font-semibold mb-3">Project Type</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: 'mobile', label: 'Mobile App', icon: '📱' },
+                    { value: 'web', label: 'Web App', icon: '💻' },
+                    { value: 'web+mobile', label: 'Web + Mobile', icon: '🌐' },
+                    { value: 'erp', label: 'ERP/CRM', icon: '📊' }
+                  ].map(type => (
+                    <button
+                      key={type.value}
+                      onClick={() => setEstimatorData(prev => ({ ...prev, projectType: type.value }))}
+                      className={`p-4 rounded-lg border-2 transition ${
+                        estimatorData.projectType === type.value
+                          ? 'border-red-500 bg-red-500/10'
+                          : 'border-gray-700 hover:border-red-500/50'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{type.icon}</div>
+                      <div className="text-sm font-semibold text-white">{type.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Complexity */}
+              {estimatorData.projectType && (
+                <div>
+                  <label className="block text-white font-semibold mb-3">Complexity</label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { value: 'simple', label: 'Simple' },
+                      { value: 'medium', label: 'Medium' },
+                      { value: 'complex', label: 'Complex' }
+                    ].map(comp => (
+                      <button
+                        key={comp.value}
+                        onClick={() => setEstimatorData(prev => ({ ...prev, complexity: comp.value }))}
+                        className={`p-3 rounded-lg border-2 transition ${
+                          estimatorData.complexity === comp.value
+                            ? 'border-red-500 bg-red-500/10'
+                            : 'border-gray-700 hover:border-red-500/50'
+                        }`}
+                      >
+                        <div className="text-sm font-semibold text-white">{comp.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add-ons */}
+              {estimatorData.complexity && (
+                <div>
+                  <label className="block text-white font-semibold mb-3">Add-ons (Optional)</label>
+                  <div className="space-y-2">
+                    {[
+                      { value: 'animations', label: 'Premium Animations & Effects', cost: '+$2K-$5K' },
+                      { value: 'api', label: 'API Integrations', cost: '+$2K-$8K' },
+                      { value: 'payment', label: 'Payment Gateway', cost: '+$3K-$5K' },
+                      { value: 'ai', label: 'AI/ML Features', cost: '+$4K-$10K' },
+                      { value: 'realtime', label: 'Real-time Capabilities', cost: '+$3K-$8K' },
+                      { value: 'analytics', label: 'Analytics Dashboard', cost: '+$2.5K-$6K' },
+                      { value: 'security', label: 'Enhanced Security', cost: '+$2K-$5K' }
+                    ].map(addon => (
+                      <label
+                        key={addon.value}
+                        className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg cursor-pointer hover:bg-gray-800 transition"
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={estimatorData.addons.includes(addon.value)}
+                            onChange={(e) => {
+                              setEstimatorData(prev => ({
+                                ...prev,
+                                addons: e.target.checked
+                                  ? [...prev.addons, addon.value]
+                                  : prev.addons.filter(a => a !== addon.value)
+                              }));
+                            }}
+                            className="w-5 h-5 text-red-500 bg-gray-900 border-gray-700 rounded focus:ring-red-500"
+                          />
+                          <span className="text-white text-sm">{addon.label}</span>
+                        </div>
+                        <span className="text-gray-400 text-xs">{addon.cost}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Estimate Result */}
+              {estimate && (
+                <div className="mt-8 p-6 bg-gradient-to-br from-red-900/20 to-black border border-red-500 rounded-lg">
+                  <div className="text-center mb-4">
+                    <div className="text-gray-400 text-sm mb-2">💰 Estimated Investment</div>
+                    <div className="text-4xl font-bold text-red-500">
+                      ${estimate.min} - ${estimate.max}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4 text-center">
+                    <div>
+                      <div className="text-gray-400 text-xs mb-1">⏱️ Timeline</div>
+                      <div className="text-white font-semibold">{estimate.timeline}</div>
+                    </div>
+                    <div>
+                      <div className="text-gray-400 text-xs mb-1">✓ Included</div>
+                      <div className="text-white font-semibold">Custom Design</div>
+                    </div>
+                  </div>
+                  <div className="border-t border-gray-700 pt-4">
+                    <p className="text-gray-400 text-sm text-center mb-3">
+                      ✓ Full documentation<br/>
+                      ✓ 24/7 development cycle<br/>
+                      ✓ Post-launch support
+                    </p>
+                    <p className="text-red-400 italic text-center text-sm font-semibold">
+                      "Turning your expenses into investments..."
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const formSection = document.getElementById('contact-form');
+                      formSection?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="w-full mt-4 px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition"
+                  >
+                    Get Detailed Quote →
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-          <textarea name="message" value={formData.message} onChange={handleFormChange} placeholder={t?.contact?.messagePlaceholder} required rows={6} className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none transition resize-none" />
-          <button type="submit" className="w-full px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
-            <Send size={20} />
-            {t?.contact?.submitButton}
-          </button>
-        </form>
-        <div className="mt-12 text-center">
-          <p className="text-gray-500 mb-2">or email us directly at</p>
-          <a href="mailto:hello@madkorean.com" className="text-red-500 hover:text-red-400 font-semibold text-lg">hello@madkorean.com</a>
+
+          {/* Why Choose Us */}
+          <div className="space-y-6">
+            <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+              <h3 className="text-xl font-bold text-red-500 mb-4">Why Mad Korean?</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="text-red-500 flex-shrink-0 mt-1" size={20} />
+                  <div>
+                    <div className="font-semibold text-white mb-1">Custom Design. Always.</div>
+                    <div className="text-gray-400 text-sm">We don't use templates. Every project is built from scratch to match your vision.</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="text-red-500 flex-shrink-0 mt-1" size={20} />
+                  <div>
+                    <div className="font-semibold text-white mb-1">50% Less Than US Agencies</div>
+                    <div className="text-gray-400 text-sm">Premium Korean engineering at competitive prices.</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="text-red-500 flex-shrink-0 mt-1" size={20} />
+                  <div>
+                    <div className="font-semibold text-white mb-1">The 24/7 Engine</div>
+                    <div className="text-gray-400 text-sm">While you sleep, we build. Wake up to progress every morning.</div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="text-red-500 flex-shrink-0 mt-1" size={20} />
+                  <div>
+                    <div className="font-semibold text-white mb-1">No Hidden Fees</div>
+                    <div className="text-gray-400 text-sm">Transparent pricing. What you see is what you get.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-lg p-6">
+              <h3 className="text-xl font-bold text-white mb-4">What's Included</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {[
+                  '✓ Custom UI/UX Design',
+                  '✓ Clean Code',
+                  '✓ Full Documentation',
+                  '✓ Quality Assurance',
+                  '✓ Deployment Support',
+                  '✓ 30-day Bug Fixes',
+                  '✓ Source Code Ownership',
+                  '✓ Real-time Updates'
+                ].map((item, i) => (
+                  <div key={i} className="text-gray-300">{item}</div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Contact Form */}
+        <div id="contact-form" className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-2">Ready to Start?</h2>
+            <p className="text-gray-400">Fill out the form below and we'll get back to you within 24 hours</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <input type="text" name="name" value={formData.name} onChange={handleFormChange} placeholder={t?.contact?.namePlaceholder || 'Your Name'} required className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none transition" />
+            <input type="email" name="email" value={formData.email} onChange={handleFormChange} placeholder={t?.contact?.emailPlaceholder || 'Email Address'} required className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none transition" />
+            <input type="text" name="company" value={formData.company} onChange={handleFormChange} placeholder={t?.contact?.companyPlaceholder || 'Company Name (Optional)'} className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none transition" />
+            <div>
+              <label className="block text-gray-400 mb-3">{t?.contact?.budgetLabel || 'Budget Range'}</label>
+              <select name="budget" value={formData.budget} onChange={handleFormChange} required className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white focus:border-red-500 focus:outline-none transition">
+                <option value="">Select budget range</option>
+                <option value="< $20K">&lt; $20K</option>
+                <option value="$20K - $50K">$20K - $50K</option>
+                <option value="$50K - $100K">$50K - $100K</option>
+                <option value="$100K - $200K">$100K - $200K</option>
+                <option value="$200K+">$200K+</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-gray-400 mb-3">{t?.contact?.devTypeLabel || 'Development Type'} (Select all that apply)</label>
+              <div className="grid md:grid-cols-2 gap-4">
+                {[
+                  { value: 'mobile', label: 'Mobile App', icon: Smartphone },
+                  { value: 'web', label: 'Web Application', icon: Monitor },
+                  { value: 'erp', label: 'ERP System', icon: Database },
+                  { value: 'crm', label: 'CRM System', icon: Package },
+                  { value: 'ecommerce', label: 'E-commerce', icon: DollarSign },
+                  { value: 'other', label: 'Other', icon: Code }
+                ].map(({ value, label, icon: Icon }) => (
+                  <label key={value} className="flex items-center gap-3 px-4 py-3 bg-gray-900/50 border border-gray-800 rounded-lg cursor-pointer hover:border-red-500/50 transition">
+                    <input type="checkbox" name="devType" value={value} checked={formData.devType.includes(value)} onChange={handleFormChange} className="w-5 h-5 text-red-500 bg-gray-900 border-gray-700 rounded focus:ring-red-500" />
+                    <Icon size={20} className="text-red-500" />
+                    <span className="text-white">{label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <textarea name="message" value={formData.message} onChange={handleFormChange} placeholder={t?.contact?.messagePlaceholder || 'Tell us about your project...'} required rows={6} className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none transition resize-none" />
+            <button type="submit" className="w-full px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
+              <Send size={20} />
+              {t?.contact?.submitButton || 'Send Message'}
+            </button>
+          </form>
+
+          <div className="mt-12 text-center">
+            <p className="text-gray-500 mb-2">or email us directly at</p>
+            <a href="mailto:hello@madkorean.com" className="text-red-500 hover:text-red-400 font-semibold text-lg">hello@madkorean.com</a>
+          </div>
         </div>
       </div>
     </section>
