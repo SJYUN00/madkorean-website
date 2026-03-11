@@ -391,21 +391,35 @@ const ContactPage = ({ t, language, onNavigate }) => {
 const StatCard = ({ stat, label, delay }) => {
   const ref = useRef(null);
   const [started, setStarted] = useState(false);
-  const num = parseInt(String(stat).replace(/[^0-9]/g, ''));
-  const suffix = String(stat).replace(/[0-9]/g, '');
-  const count = useCounter(num, 1500, started);
+  const statStr = String(stat || '');
+
+  // "24/7", "≤ 12hr" 같은 특수 포맷 감지 → 카운터 건너뛰고 원본 표시
+  const hasSlash = statStr.includes('/');
+  const hasSpecialChar = /[≤≥<>]/.test(statStr);
+  const skipCounter = hasSlash || hasSpecialChar;
+
+  // 카운터용: 순수 숫자만 추출 (슬래시/특수문자 없을 때만)
+  const numMatch = !skipCounter ? statStr.match(/\d+/) : null;
+  const num = numMatch ? parseInt(numMatch[0]) : 0;
+  const prefix = !skipCounter ? statStr.slice(0, numMatch?.index || 0) : '';
+  const suffix = !skipCounter && numMatch ? statStr.slice(numMatch.index + numMatch[0].length) : '';
+  const count = useCounter(num, 1500, started && !skipCounter);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setStarted(true); observer.disconnect(); } }, { threshold: 0.5 });
+    const observer = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setStarted(true); observer.disconnect(); }
+    }, { threshold: 0.3 });
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
   }, []);
 
+  const displayValue = skipCounter
+    ? statStr  // 원본 그대로
+    : (started ? `${prefix}${count}${suffix}` : `${prefix}0${suffix}`);
+
   return (
     <div ref={ref} className={`mk-fade mk-fade-delay-${delay} bg-black/50 border border-red-500/30 rounded-lg p-8 text-center hover:border-red-500 transition-all duration-300 transform hover:scale-105`}>
-      <div className="text-5xl font-bold text-red-500 mb-2">
-        {started ? `${count}${suffix}` : `0${suffix}`}
-      </div>
+      <div className="text-5xl font-bold text-red-500 mb-2">{displayValue}</div>
       <div className="text-gray-400">{label}</div>
     </div>
   );
@@ -678,8 +692,11 @@ const MadKoreanWebsite = () => {
           if (section && key) {
             if (!contentData.en[section]) contentData.en[section] = {};
             if (!contentData.ko[section]) contentData.ko[section] = {};
-            contentData.en[section][key] = enText || '';
-            contentData.ko[section][key] = koText || '';
+            // Sheets에서 빈값이면 fallback 사용
+            const fbEn = fallbackContent.en?.[section]?.[key] || '';
+            const fbKo = fallbackContent.ko?.[section]?.[key] || '';
+            contentData.en[section][key] = enText || fbEn;
+            contentData.ko[section][key] = koText || fbKo;
           }
         }
         setContent(contentData);
