@@ -821,11 +821,12 @@ const MadKoreanWebsite = () => {
             <span className="text-white">MAD</span>
             <span className="text-red-500">KOREAN</span>
           </button>
-          <div className="hidden md:flex gap-8 items-center">
-            <button onClick={() => setCurrentPage('home')} className="hover:text-red-500 transition">{t?.nav?.home}</button>
-            <button onClick={() => setCurrentPage('portfolio')} className="hover:text-red-500 transition">{t?.nav?.portfolio}</button>
-            <button onClick={() => setCurrentPage('process')} className="hover:text-red-500 transition">{t?.nav?.process}</button>
-            <button onClick={() => setCurrentPage('contact')} className="hover:text-red-500 transition">{t?.nav?.contact}</button>
+          {/* 데스크탑 메뉴 - inline style로 강제 표시 */}
+          <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }} className="nav-menu">
+            <button onClick={() => setCurrentPage('home')} style={{ color: currentPage === 'home' ? '#ef4444' : '#fff', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }} onMouseEnter={e => e.target.style.color='#ef4444'} onMouseLeave={e => e.target.style.color= currentPage === 'home' ? '#ef4444' : '#fff'}>{t?.nav?.home}</button>
+            <button onClick={() => setCurrentPage('portfolio')} style={{ color: currentPage === 'portfolio' ? '#ef4444' : '#fff', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }} onMouseEnter={e => e.target.style.color='#ef4444'} onMouseLeave={e => e.target.style.color= currentPage === 'portfolio' ? '#ef4444' : '#fff'}>{t?.nav?.portfolio}</button>
+            <button onClick={() => setCurrentPage('process')} style={{ color: currentPage === 'process' ? '#ef4444' : '#fff', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }} onMouseEnter={e => e.target.style.color='#ef4444'} onMouseLeave={e => e.target.style.color= currentPage === 'process' ? '#ef4444' : '#fff'}>{t?.nav?.process}</button>
+            <button onClick={() => setCurrentPage('contact')} style={{ color: currentPage === 'contact' ? '#ef4444' : '#fff', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }} onMouseEnter={e => e.target.style.color='#ef4444'} onMouseLeave={e => e.target.style.color= currentPage === 'contact' ? '#ef4444' : '#fff'}>{t?.nav?.contact}</button>
           </div>
           <button onClick={() => setLanguage(language === 'en' ? 'ko' : 'en')} className="flex items-center gap-2 px-4 py-2 border border-red-500 rounded-full hover:bg-red-500 transition">
             <Globe size={18} />
