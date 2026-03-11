@@ -1,5 +1,118 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Globe, Clock, Zap, Code, ChevronDown, CheckCircle, DollarSign, Smartphone, Monitor, Database, Package, Star, Send } from 'lucide-react';
+
+// ── 전역 애니메이션 CSS 주입 ──
+const injectStyles = () => {
+  if (document.getElementById('mk-anim-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'mk-anim-styles';
+  style.textContent = `
+    /* 스크롤 페이드인 */
+    .mk-fade { opacity: 0; transform: translateY(40px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .mk-fade.visible { opacity: 1; transform: translateY(0); }
+    .mk-fade-delay-1 { transition-delay: 0.1s; }
+    .mk-fade-delay-2 { transition-delay: 0.2s; }
+    .mk-fade-delay-3 { transition-delay: 0.3s; }
+
+    /* 페이지 전환 fade */
+    .mk-page { animation: mkPageIn 0.4s ease forwards; }
+    @keyframes mkPageIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ripple 버튼 */
+    .mk-ripple { position: relative; overflow: hidden; }
+    .mk-ripple-wave { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.3); transform: scale(0); animation: mkRipple 0.6s linear; pointer-events: none; }
+    @keyframes mkRipple { to { transform: scale(4); opacity: 0; } }
+
+    /* 파티클 캔버스 */
+    #mk-particles { position: absolute; inset: 0; pointer-events: none; }
+  `;
+  document.head.appendChild(style);
+};
+
+// ── Ripple 훅 ──
+const useRipple = () => {
+  const createRipple = useCallback((e) => {
+    const btn = e.currentTarget;
+    const circle = document.createElement('span');
+    const diameter = Math.max(btn.clientWidth, btn.clientHeight);
+    const rect = btn.getBoundingClientRect();
+    circle.style.width = circle.style.height = diameter + 'px';
+    circle.style.left = (e.clientX - rect.left - diameter / 2) + 'px';
+    circle.style.top = (e.clientY - rect.top - diameter / 2) + 'px';
+    circle.classList.add('mk-ripple-wave');
+    btn.querySelector('.mk-ripple-wave')?.remove();
+    btn.appendChild(circle);
+  }, []);
+  return createRipple;
+};
+
+// ── 스크롤 페이드인 훅 ──
+const useFadeIn = () => {
+  useEffect(() => {
+    const els = document.querySelectorAll('.mk-fade');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+    }, { threshold: 0.15 });
+    els.forEach(el => observer.observe(el));
+    return () => observer.disconnect();
+  });
+};
+
+// ── 숫자 카운터 훅 ──
+const useCounter = (target, duration = 1500, started = false) => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    if (!started) return;
+    const isPercent = String(target).includes('%');
+    const num = parseInt(String(target).replace(/[^0-9]/g, ''));
+    if (isNaN(num)) return;
+    let start = 0;
+    const step = num / (duration / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= num) { setCount(num); clearInterval(timer); }
+      else setCount(Math.floor(start));
+    }, 16);
+    return () => clearInterval(timer);
+  }, [started, target]);
+  return count;
+};
+
+// ── 파티클 컴포넌트 ──
+const Particles = () => {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+      r: Math.random() * 2.5 + 0.5,
+      dx: (Math.random() - 0.5) * 0.5, dy: (Math.random() - 0.5) * 0.5,
+      alpha: Math.random() * 0.5 + 0.1
+    }));
+    let animId;
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(220, 38, 38, ${p.alpha})`;
+        ctx.fill();
+        p.x += p.dx; p.y += p.dy;
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+      });
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(animId);
+  }, []);
+  return <canvas ref={canvasRef} id="mk-particles" style={{ width: '100%', height: '100%' }} />;
+};
+
 
 const SHEET_ID = '1xC8EEsa4ec_H3ma1JdvMxMeO41CvCkOMpO0iJks-fek';
 
@@ -98,10 +211,14 @@ const ContactPage = ({ t, language, onNavigate }) => {
     return { min: minCost.toLocaleString(), max: maxCost.toLocaleString(), timeline: timelineRanges[projectType] };
   }, [estimatorData]);
 
+  const ripple = useRipple();
+  useFadeIn();
+  useEffect(() => { injectStyles(); }, []);
+
   return (
-    <section className="py-32 bg-black min-h-screen">
+    <section className="mk-page py-32 bg-black min-h-screen">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16 pt-20">
+        <div className="text-center mb-16 pt-20 mk-fade">
           <h1 className="text-5xl md:text-6xl font-bold mb-4">{t?.contact?.title || 'Start Your Project'}</h1>
           <p className="text-xl text-gray-400">{t?.contact?.subtitle || "Let's build something extraordinary together"}</p>
         </div>
@@ -255,7 +372,7 @@ const ContactPage = ({ t, language, onNavigate }) => {
             </div>
             <textarea name="message" value={formData.message} onChange={handleFormChange} placeholder={t?.contact?.messagePlaceholder || 'Tell us about your project...'} required rows={6}
               className="w-full px-6 py-4 bg-gray-900/50 border border-gray-800 rounded-lg text-white placeholder-gray-500 focus:border-red-500 focus:outline-none transition resize-none" />
-            <button type="submit" className="w-full px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
+            <button type="submit" onClick={ripple} className="mk-ripple w-full px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-lg transition transform hover:scale-105 flex items-center justify-center gap-2">
               <Send size={20} />
               {t?.contact?.submitButton || 'Send Message'}
             </button>
@@ -270,21 +387,56 @@ const ContactPage = ({ t, language, onNavigate }) => {
   );
 };
 
+// ── 숫자 카운터 카드 ──
+const StatCard = ({ stat, label, delay }) => {
+  const ref = useRef(null);
+  const [started, setStarted] = useState(false);
+  const num = parseInt(String(stat).replace(/[^0-9]/g, ''));
+  const suffix = String(stat).replace(/[0-9]/g, '');
+  const count = useCounter(num, 1500, started);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setStarted(true); observer.disconnect(); } }, { threshold: 0.5 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className={`mk-fade mk-fade-delay-${delay} bg-black/50 border border-red-500/30 rounded-lg p-8 text-center hover:border-red-500 transition-all duration-300 transform hover:scale-105`}>
+      <div className="text-5xl font-bold text-red-500 mb-2">
+        {started ? `${count}${suffix}` : `0${suffix}`}
+      </div>
+      <div className="text-gray-400">{label}</div>
+    </div>
+  );
+};
+
 // ────────────────────────────────────────────────
 // HomePage
 // ────────────────────────────────────────────────
-const HomePage = ({ t, language, scrollY, testimonials, faqs, onNavigate }) => (
-  <>
+const HomePage = ({ t, language, scrollY, testimonials, faqs, onNavigate }) => {
+  const ripple = useRipple();
+  useFadeIn();
+
+  useEffect(() => { injectStyles(); }, []);
+
+  return (
+  <div className="mk-page">
+    {/* Hero */}
     <section className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20">
+      <Particles />
       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, #dc2626 0%, transparent 50%)', transform: `translateY(${scrollY * 0.5}px)` }} />
       <div className="max-w-6xl mx-auto px-6 text-center relative z-10">
         <h1 className="text-6xl md:text-8xl font-bold mb-6 leading-tight">
-          <div className="text-white mb-2">{t?.hero?.title1 || 'Madly Fast.'}</div>
-          <div className="text-white mb-2">{t?.hero?.title2 || 'Madly Precise.'}</div>
-          <div className="text-red-500">{t?.hero?.title3 || 'Madly Korean.'}</div>
+          <div className="text-white mb-2" style={{ animation: 'mkPageIn 0.6s ease 0.1s both' }}>{t?.hero?.title1 || 'Madly Fast.'}</div>
+          <div className="text-white mb-2" style={{ animation: 'mkPageIn 0.6s ease 0.3s both' }}>{t?.hero?.title2 || 'Madly Precise.'}</div>
+          <div className="text-red-500" style={{ animation: 'mkPageIn 0.6s ease 0.5s both' }}>{t?.hero?.title3 || 'Madly Korean.'}</div>
         </h1>
-        <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto">{t?.hero?.subtitle}</p>
-        <button onClick={() => { onNavigate('contact'); gaEvent('cta_click', { button: 'start_your_project', location: 'hero' }); }} className="inline-block px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-full transition transform hover:scale-105">
+        <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto" style={{ animation: 'mkPageIn 0.6s ease 0.7s both' }}>{t?.hero?.subtitle}</p>
+        <button
+          onClick={(e) => { ripple(e); onNavigate('contact'); gaEvent('cta_click', { button: 'start_your_project', location: 'hero' }); }}
+          className="mk-ripple inline-block px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-full transition transform hover:scale-105"
+          style={{ animation: 'mkPageIn 0.6s ease 0.9s both' }}>
           {t?.hero?.cta || 'Start Your Project'}
         </button>
         <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
@@ -293,33 +445,32 @@ const HomePage = ({ t, language, scrollY, testimonials, faqs, onNavigate }) => (
       </div>
     </section>
 
+    {/* 24/7 Engine */}
     <section className="py-32 bg-gradient-to-b from-black to-gray-900">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 mk-fade">
           <h2 className="text-5xl md:text-6xl font-bold mb-4">{t?.engine?.title || 'The 24/7 Engine'}</h2>
           <p className="text-2xl text-red-500 font-semibold">{t?.engine?.subtitle || 'We Build While You Sleep'}</p>
         </div>
-        <p className="text-xl text-gray-300 text-center max-w-4xl mx-auto mb-16 leading-relaxed">{t?.engine?.description}</p>
+        <p className="text-xl text-gray-300 text-center max-w-4xl mx-auto mb-16 leading-relaxed mk-fade">{t?.engine?.description}</p>
         <div className="grid md:grid-cols-3 gap-8">
           {['stat1', 'stat2', 'stat3'].map((stat, i) => (
-            <div key={i} className="bg-black/50 border border-red-500/30 rounded-lg p-8 text-center hover:border-red-500 transition-all duration-300 transform hover:scale-105">
-              <div className="text-5xl font-bold text-red-500 mb-2">{t?.engine?.[stat]}</div>
-              <div className="text-gray-400">{t?.engine?.[`${stat}Label`]}</div>
-            </div>
+            <StatCard key={i} stat={t?.engine?.[stat] || '0'} label={t?.engine?.[`${stat}Label`]} delay={i + 1} />
           ))}
         </div>
       </div>
     </section>
 
+    {/* Obsession */}
     <section className="py-32 bg-black">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 mk-fade">
           <h2 className="text-5xl md:text-6xl font-bold mb-4">{t?.obsession?.title || 'Our Obsession'}</h2>
           <p className="text-xl text-gray-400">{t?.obsession?.subtitle}</p>
         </div>
         <div className="grid md:grid-cols-3 gap-12">
           {[{ icon: Code, key: 'point1' }, { icon: Zap, key: 'point2' }, { icon: Clock, key: 'point3' }].map(({ icon: Icon, key }, i) => (
-            <div key={i} className="text-center group">
+            <div key={i} className={`text-center group mk-fade mk-fade-delay-${i + 1}`}>
               <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-red-500/20 transition">
                 <Icon size={40} className="text-red-500" />
               </div>
@@ -331,15 +482,16 @@ const HomePage = ({ t, language, scrollY, testimonials, faqs, onNavigate }) => (
       </div>
     </section>
 
+    {/* Testimonials */}
     <section className="py-32 bg-gradient-to-b from-gray-900 to-black">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 mk-fade">
           <h2 className="text-5xl md:text-6xl font-bold mb-4">{t?.testimonials?.title || 'Client Success Stories'}</h2>
           <p className="text-xl text-gray-400">{t?.testimonials?.subtitle}</p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {testimonials.map((item, i) => (
-            <div key={i} className="bg-gray-900/50 border border-gray-800 rounded-lg p-8 hover:border-red-500/50 transition-all duration-300 transform hover:scale-105">
+            <div key={i} className={`mk-fade mk-fade-delay-${i + 1} bg-gray-900/50 border border-gray-800 rounded-lg p-8 hover:border-red-500/50 transition-all duration-300 transform hover:scale-105`}>
               <div className="flex gap-1 mb-4">{[...Array(item.rating)].map((_, j) => <Star key={j} size={20} className="fill-red-500 text-red-500" />)}</div>
               <p className="text-gray-300 mb-6 leading-relaxed italic">"{language === 'en' ? item.text_en : item.text_ko}"</p>
               <div className="border-t border-gray-700 pt-4">
@@ -352,15 +504,16 @@ const HomePage = ({ t, language, scrollY, testimonials, faqs, onNavigate }) => (
       </div>
     </section>
 
+    {/* FAQ */}
     <section className="py-32 bg-black">
       <div className="max-w-4xl mx-auto px-6">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 mk-fade">
           <h2 className="text-5xl md:text-6xl font-bold mb-4">{t?.faq?.title || 'Frequently Asked Questions'}</h2>
           <p className="text-xl text-gray-400">{t?.faq?.subtitle}</p>
         </div>
         <div className="space-y-6">
           {faqs.map((faq, i) => (
-            <div key={i} className="bg-gray-900/50 border border-gray-800 rounded-lg p-6 hover:border-red-500/50 transition-all duration-300">
+            <div key={i} className="mk-fade bg-gray-900/50 border border-gray-800 rounded-lg p-6 hover:border-red-500/50 transition-all duration-300">
               <h3 className="text-xl font-bold mb-3 text-red-500">{language === 'en' ? faq.q_en : faq.q_ko}</h3>
               <p className="text-gray-400 leading-relaxed">{language === 'en' ? faq.a_en : faq.a_ko}</p>
             </div>
@@ -369,77 +522,88 @@ const HomePage = ({ t, language, scrollY, testimonials, faqs, onNavigate }) => (
       </div>
     </section>
 
+    {/* Bottom CTA */}
     <section className="py-32 bg-gradient-to-t from-red-950/20 to-black">
-      <div className="max-w-4xl mx-auto px-6 text-center">
+      <div className="max-w-4xl mx-auto px-6 text-center mk-fade">
         <h2 className="text-5xl md:text-6xl font-bold mb-6">{t?.cta?.title}</h2>
         <p className="text-2xl text-gray-400 mb-12">{t?.cta?.subtitle}</p>
-        <button onClick={() => { onNavigate('contact'); gaEvent('cta_click', { button: 'get_started', location: 'bottom_cta' }); }} className="inline-block px-12 py-5 bg-red-500 hover:bg-red-600 text-white font-bold text-xl rounded-full transition transform hover:scale-105 mb-6">
+        <button
+          onClick={(e) => { ripple(e); onNavigate('contact'); gaEvent('cta_click', { button: 'get_started', location: 'bottom_cta' }); }}
+          className="mk-ripple inline-block px-12 py-5 bg-red-500 hover:bg-red-600 text-white font-bold text-xl rounded-full transition transform hover:scale-105 mb-6">
           {t?.cta?.button || 'Get Started'}
         </button>
         <p className="text-gray-500">{t?.cta?.email}</p>
       </div>
     </section>
-  </>
-);
+  </div>
+  );
+};
 
 // ────────────────────────────────────────────────
 // PortfolioPage
 // ────────────────────────────────────────────────
-const PortfolioPage = ({ t, language, portfolio }) => (
-  <section className="py-32 bg-black min-h-screen">
-    <div className="max-w-7xl mx-auto px-6">
-      <div className="text-center mb-16 pt-20">
-        <h1 className="text-5xl md:text-6xl font-bold mb-4">{t?.portfolio?.title}</h1>
-        <p className="text-xl text-gray-400">{t?.portfolio?.subtitle}</p>
-      </div>
-      <div className="space-y-24">
-        {portfolio.map((project, i) => (
-          <div key={i} className="grid md:grid-cols-2 gap-12 items-center">
-            <div className={i % 2 === 1 ? 'md:order-2' : ''}>
-              {project.image && (
-                <div className="rounded-lg overflow-hidden border border-gray-800 hover:border-red-500 transition">
-                  <img src={project.image} alt={language === 'en' ? project.title_en : project.title_ko} className="w-full h-auto" loading="lazy" />
-                </div>
-              )}
-            </div>
-            <div className={i % 2 === 1 ? 'md:order-1' : ''}>
-              <h3 className="text-3xl font-bold mb-4">{language === 'en' ? project.title_en : project.title_ko}</h3>
-              <p className="text-gray-400 mb-6 leading-relaxed">{language === 'en' ? project.desc_en : project.desc_ko}</p>
-              {project.tech && (
-                <div className="mb-6">
-                  <p className="text-sm text-gray-500 mb-2">Tech Stack</p>
-                  <div className="flex flex-wrap gap-2">
-                    {project.tech.split(',').map((tech, idx) => <span key={idx} className="px-3 py-1 bg-red-500/10 border border-red-500/30 rounded-full text-sm text-red-400">{tech.trim()}</span>)}
+const PortfolioPage = ({ t, language, portfolio }) => {
+  useFadeIn();
+  useEffect(() => { injectStyles(); }, []);
+  return (
+    <section className="mk-page py-32 bg-black min-h-screen">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-center mb-16 pt-20 mk-fade">
+          <h1 className="text-5xl md:text-6xl font-bold mb-4">{t?.portfolio?.title}</h1>
+          <p className="text-xl text-gray-400">{t?.portfolio?.subtitle}</p>
+        </div>
+        <div className="space-y-24">
+          {portfolio.map((project, i) => (
+            <div key={i} className="mk-fade grid md:grid-cols-2 gap-12 items-center">
+              <div className={i % 2 === 1 ? 'md:order-2' : ''}>
+                {project.image && (
+                  <div className="rounded-lg overflow-hidden border border-gray-800 hover:border-red-500 transition">
+                    <img src={project.image} alt={language === 'en' ? project.title_en : project.title_ko} className="w-full h-auto" loading="lazy" />
                   </div>
-                </div>
-              )}
-              {(project.challenge_en || project.challenge_ko) && (
-                <div className="mb-6 bg-gray-900/50 border border-gray-800 rounded-lg p-6">
-                  <h4 className="text-red-500 font-semibold mb-2 flex items-center gap-2"><Code size={18} />{language === 'en' ? 'Technical Challenge' : '기술적 도전'}</h4>
-                  <p className="text-gray-400 leading-relaxed">{language === 'en' ? project.challenge_en : project.challenge_ko}</p>
-                </div>
-              )}
-              {(project.result_en || project.result_ko) && (
-                <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6">
-                  <h4 className="text-green-500 font-semibold mb-2 flex items-center gap-2"><CheckCircle size={18} />{language === 'en' ? 'Results' : '결과'}</h4>
-                  <p className="text-gray-400 leading-relaxed">{language === 'en' ? project.result_en : project.result_ko}</p>
-                </div>
-              )}
+                )}
+              </div>
+              <div className={i % 2 === 1 ? 'md:order-1' : ''}>
+                <h3 className="text-3xl font-bold mb-4">{language === 'en' ? project.title_en : project.title_ko}</h3>
+                <p className="text-gray-400 mb-6 leading-relaxed">{language === 'en' ? project.desc_en : project.desc_ko}</p>
+                {project.tech && (
+                  <div className="mb-6">
+                    <p className="text-sm text-gray-500 mb-2">Tech Stack</p>
+                    <div className="flex flex-wrap gap-2">
+                      {project.tech.split(',').map((tech, idx) => <span key={idx} className="px-3 py-1 bg-red-500/10 border border-red-500/30 rounded-full text-sm text-red-400">{tech.trim()}</span>)}
+                    </div>
+                  </div>
+                )}
+                {(project.challenge_en || project.challenge_ko) && (
+                  <div className="mb-6 bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+                    <h4 className="text-red-500 font-semibold mb-2 flex items-center gap-2"><Code size={18} />{language === 'en' ? 'Technical Challenge' : '기술적 도전'}</h4>
+                    <p className="text-gray-400 leading-relaxed">{language === 'en' ? project.challenge_en : project.challenge_ko}</p>
+                  </div>
+                )}
+                {(project.result_en || project.result_ko) && (
+                  <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-6">
+                    <h4 className="text-green-500 font-semibold mb-2 flex items-center gap-2"><CheckCircle size={18} />{language === 'en' ? 'Results' : '결과'}</h4>
+                    <p className="text-gray-400 leading-relaxed">{language === 'en' ? project.result_en : project.result_ko}</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};
 
 // ────────────────────────────────────────────────
 // ProcessPage
 // ────────────────────────────────────────────────
-const ProcessPage = ({ t, language, process }) => (
-  <section className="py-32 bg-black min-h-screen">
+const ProcessPage = ({ t, language, process }) => {
+  useFadeIn();
+  useEffect(() => { injectStyles(); }, []);
+  return (
+  <section className="mk-page py-32 bg-black min-h-screen">
     <div className="max-w-6xl mx-auto px-6">
-      <div className="text-center mb-16 pt-20">
+      <div className="text-center mb-16 pt-20 mk-fade">
         <h1 className="text-5xl md:text-6xl font-bold mb-4">{t?.process?.title}</h1>
         <p className="text-xl text-gray-400">{t?.process?.subtitle}</p>
       </div>
@@ -447,7 +611,7 @@ const ProcessPage = ({ t, language, process }) => (
         <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-red-500 via-red-500/50 to-transparent"></div>
         <div className="space-y-16">
           {process.map((step, i) => (
-            <div key={i} className="relative grid md:grid-cols-2 gap-8 items-center">
+            <div key={i} className="mk-fade relative grid md:grid-cols-2 gap-8 items-center">
               <div className={i % 2 === 0 ? 'md:text-right md:pr-12' : 'md:pl-12 md:col-start-2'}>
                 <div className="inline-block bg-red-500/10 border border-red-500/30 rounded-full px-4 py-1 mb-4">
                   <span className="text-red-500 font-semibold">{step.step}</span>
@@ -471,7 +635,8 @@ const ProcessPage = ({ t, language, process }) => (
       </div>
     </div>
   </section>
-);
+  );
+};
 
 // ────────────────────────────────────────────────
 // 메인 컴포넌트
@@ -595,7 +760,7 @@ const MadKoreanWebsite = () => {
         <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* 로고 */}
           <button onClick={() => handleNavigate('home')} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src="/logo.png" alt="Mad Korean Logo" style={{ width: '44px', height: '44px', borderRadius: '8px' }} />
+            <img src="/logo.png" alt="Mad Korean Logo" style={{ width: '36px', height: '36px', borderRadius: '8px', mixBlendMode: 'screen' }} />
             <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>
               <span style={{ color: '#fff' }}>MAD</span>
               <span style={{ color: '#ef4444' }}>KOREAN</span>
