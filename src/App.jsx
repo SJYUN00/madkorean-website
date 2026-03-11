@@ -592,14 +592,24 @@ const MadKoreanWebsite = () => {
             ))}
           </div>
 
-          {/* 언어 버튼 */}
-          <button onClick={() => setLanguage(language === 'en' ? 'ko' : 'en')}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', border: '1px solid #ef4444', borderRadius: '9999px', background: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.9rem', transition: 'background 0.2s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#ef4444'}
-            onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-            <Globe size={16} />
-            {language === 'en' ? '한국어' : 'English'}
-          </button>
+          {/* 우측 버튼 그룹 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Book a Call 버튼 */}
+            <a href="https://calendly.com/pender0207/30min" target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: '#ef4444', border: 'none', borderRadius: '9999px', color: '#fff', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none', transition: 'background 0.2s', whiteSpace: 'nowrap' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#dc2626'}
+              onMouseLeave={e => e.currentTarget.style.background = '#ef4444'}>
+              📅 {language === 'en' ? 'Book a Call' : '미팅 예약'}
+            </a>
+            {/* 언어 버튼 */}
+            <button onClick={() => setLanguage(language === 'en' ? 'ko' : 'en')}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', border: '1px solid #ef4444', borderRadius: '9999px', background: 'none', color: '#fff', cursor: 'pointer', fontSize: '0.9rem', transition: 'background 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#ef4444'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              <Globe size={16} />
+              {language === 'en' ? '한국어' : 'English'}
+            </button>
+          </div>
         </div>
       </nav>
 
