@@ -139,7 +139,7 @@ const fallbackContent = {
     testimonials: { title: 'Client Success Stories', subtitle: 'What Our Clients Say' },
     faq: { title: 'Frequently Asked Questions', subtitle: 'Everything you need to know' },
     contact: { title: 'Start Your Project', subtitle: "Let's build something extraordinary together", namePlaceholder: 'Your Name', emailPlaceholder: 'Email Address', companyPlaceholder: 'Company Name (Optional)', budgetLabel: 'Budget Range', devTypeLabel: 'Development Type', messagePlaceholder: 'Tell us about your project...', submitButton: 'Send Message' },
-    cta: { title: 'Ready to Experience Mad Korean Quality?', subtitle: "Let's build something extraordinary together.", button: 'Get Started', email: 'hello@madkorean.com' }
+    cta: { title: 'Ready to Experience Mad Korean Quality?', subtitle: "Let's build something extraordinary together.", button: 'Get Started', email: 'madkoreandev@gmail.com' }
   },
   ko: {
     nav: { home: '홈', portfolio: '포트폴리오', process: '프로세스', contact: '연락하기' },
@@ -151,7 +151,7 @@ const fallbackContent = {
     testimonials: { title: '고객 성공 사례', subtitle: '고객들의 이야기' },
     faq: { title: '자주 묻는 질문', subtitle: '알아야 할 모든 것' },
     contact: { title: '프로젝트 시작하기', subtitle: '함께 특별한 것을 만들어봅시다', namePlaceholder: '이름', emailPlaceholder: '이메일 주소', companyPlaceholder: '회사명 (선택)', budgetLabel: '예산 범위', devTypeLabel: '개발 유형', messagePlaceholder: '프로젝트에 대해 알려주세요...', submitButton: '메시지 보내기' },
-    cta: { title: 'Mad Korean의 품질을 경험할 준비가 되셨나요?', subtitle: '함께 특별한 것을 만들어봅시다.', button: '시작하기', email: 'hello@madkorean.com' }
+    cta: { title: 'Mad Korean의 품질을 경험할 준비가 되셨나요?', subtitle: '함께 특별한 것을 만들어봅시다.', button: '시작하기', email: 'madkoreandev@gmail.com' }
   }
 };
 
@@ -191,7 +191,7 @@ const ContactPage = ({ t, language, onNavigate }) => {
     // GA 전환 이벤트
     gaEvent('form_submit', { form_name: 'contact_form', budget: formData.budget, dev_type: formData.devType.join(',') });
     gaEvent('conversion', { send_to: 'contact_form_submission' });
-    const mailto = `mailto:hello@madkorean.com?subject=New Project Inquiry from ${formData.name}&body=Name: ${formData.name}%0D%0AEmail: ${formData.email}%0D%0ACompany: ${formData.company}%0D%0ABudget: ${formData.budget}%0D%0ADevelopment Type: ${formData.devType.join(', ')}%0D%0A%0D%0AMessage:%0D%0A${formData.message}`;
+    const mailto = `mailto:madkoreandev@gmail.com?subject=New Project Inquiry from ${formData.name}&body=Name: ${formData.name}%0D%0AEmail: ${formData.email}%0D%0ACompany: ${formData.company}%0D%0ABudget: ${formData.budget}%0D%0ADevelopment Type: ${formData.devType.join(', ')}%0D%0A%0D%0AMessage:%0D%0A${formData.message}`;
     window.location.href = mailto;
   }, [formData]);
 
@@ -379,7 +379,7 @@ const ContactPage = ({ t, language, onNavigate }) => {
           </form>
           <div className="mt-12 text-center">
             <p className="text-gray-500 mb-2">or email us directly at</p>
-            <a href="mailto:hello@madkorean.com" className="text-red-500 hover:text-red-400 font-semibold text-lg">hello@madkorean.com</a>
+            <a href="mailto:madkoreandev@gmail.com" className="text-red-500 hover:text-red-400 font-semibold text-lg">madkoreandev@gmail.com</a>
           </div>
         </div>
       </div>
