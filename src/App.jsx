@@ -3,6 +3,18 @@ import { Globe, Clock, Zap, Code, ChevronDown, CheckCircle, DollarSign, Smartpho
 
 const SHEET_ID = '1xC8EEsa4ec_H3ma1JdvMxMeO41CvCkOMpO0iJks-fek';
 
+// ── Google Analytics 이벤트 헬퍼 ──
+const gaEvent = (eventName, params) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', eventName, params);
+  }
+};
+const gaPageView = (pageName) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'page_view', { page_title: pageName, page_location: window.location.href });
+  }
+};
+
 const fallbackContent = {
   en: {
     nav: { home: 'Home', portfolio: 'Portfolio', process: 'Process', contact: 'Contact' },
@@ -63,6 +75,9 @@ const ContactPage = ({ t, language, onNavigate }) => {
 
   const handleSubmit = useCallback((e) => {
     e.preventDefault();
+    // GA 전환 이벤트
+    gaEvent('form_submit', { form_name: 'contact_form', budget: formData.budget, dev_type: formData.devType.join(',') });
+    gaEvent('conversion', { send_to: 'contact_form_submission' });
     const mailto = `mailto:hello@madkorean.com?subject=New Project Inquiry from ${formData.name}&body=Name: ${formData.name}%0D%0AEmail: ${formData.email}%0D%0ACompany: ${formData.company}%0D%0ABudget: ${formData.budget}%0D%0ADevelopment Type: ${formData.devType.join(', ')}%0D%0A%0D%0AMessage:%0D%0A${formData.message}`;
     window.location.href = mailto;
   }, [formData]);
@@ -101,7 +116,7 @@ const ContactPage = ({ t, language, onNavigate }) => {
                 <label className="block text-white font-semibold mb-3">Project Type</label>
                 <div className="grid grid-cols-2 gap-3">
                   {[{ value: 'mobile', label: 'Mobile App', icon: '📱' }, { value: 'web', label: 'Web App', icon: '💻' }, { value: 'web+mobile', label: 'Web + Mobile', icon: '🌐' }, { value: 'erp', label: 'ERP/CRM', icon: '📊' }].map(type => (
-                    <button key={type.value} onClick={() => setEstimatorData(prev => ({ ...prev, projectType: type.value, complexity: '', addons: [] }))}
+                    <button key={type.value} onClick={() => { setEstimatorData(prev => ({ ...prev, projectType: type.value, complexity: '', addons: [] })); gaEvent('estimator_project_type', { project_type: type.value }); }}
                       className={`p-4 rounded-lg border-2 transition ${estimatorData.projectType === type.value ? 'border-red-500 bg-red-500/10' : 'border-gray-700 hover:border-red-500/50'}`}>
                       <div className="text-2xl mb-1">{type.icon}</div>
                       <div className="text-sm font-semibold text-white">{type.label}</div>
@@ -114,7 +129,7 @@ const ContactPage = ({ t, language, onNavigate }) => {
                   <label className="block text-white font-semibold mb-3">Complexity</label>
                   <div className="grid grid-cols-3 gap-3">
                     {[{ value: 'simple', label: 'Simple' }, { value: 'medium', label: 'Medium' }, { value: 'complex', label: 'Complex' }].map(comp => (
-                      <button key={comp.value} onClick={() => setEstimatorData(prev => ({ ...prev, complexity: comp.value }))}
+                      <button key={comp.value} onClick={() => { setEstimatorData(prev => ({ ...prev, complexity: comp.value })); gaEvent('estimator_complexity', { complexity: comp.value, project_type: estimatorData.projectType }); }}
                         className={`p-3 rounded-lg border-2 transition ${estimatorData.complexity === comp.value ? 'border-red-500 bg-red-500/10' : 'border-gray-700 hover:border-red-500/50'}`}>
                         <div className="text-sm font-semibold text-white">{comp.label}</div>
                       </button>
@@ -269,7 +284,7 @@ const HomePage = ({ t, language, scrollY, testimonials, faqs, onNavigate }) => (
           <div className="text-red-500">{t?.hero?.title3 || 'Madly Korean.'}</div>
         </h1>
         <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-3xl mx-auto">{t?.hero?.subtitle}</p>
-        <button onClick={() => onNavigate('contact')} className="inline-block px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-full transition transform hover:scale-105">
+        <button onClick={() => { onNavigate('contact'); gaEvent('cta_click', { button: 'start_your_project', location: 'hero' }); }} className="inline-block px-8 py-4 bg-red-500 hover:bg-red-600 text-white font-bold text-lg rounded-full transition transform hover:scale-105">
           {t?.hero?.cta || 'Start Your Project'}
         </button>
         <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
@@ -358,7 +373,7 @@ const HomePage = ({ t, language, scrollY, testimonials, faqs, onNavigate }) => (
       <div className="max-w-4xl mx-auto px-6 text-center">
         <h2 className="text-5xl md:text-6xl font-bold mb-6">{t?.cta?.title}</h2>
         <p className="text-2xl text-gray-400 mb-12">{t?.cta?.subtitle}</p>
-        <button onClick={() => onNavigate('contact')} className="inline-block px-12 py-5 bg-red-500 hover:bg-red-600 text-white font-bold text-xl rounded-full transition transform hover:scale-105 mb-6">
+        <button onClick={() => { onNavigate('contact'); gaEvent('cta_click', { button: 'get_started', location: 'bottom_cta' }); }} className="inline-block px-12 py-5 bg-red-500 hover:bg-red-600 text-white font-bold text-xl rounded-full transition transform hover:scale-105 mb-6">
           {t?.cta?.button || 'Get Started'}
         </button>
         <p className="text-gray-500">{t?.cta?.email}</p>
@@ -544,6 +559,10 @@ const MadKoreanWebsite = () => {
     setCurrentPage(page);
     setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // GA 페이지뷰 추적
+    const pageNames = { home: 'Home', portfolio: 'Portfolio', process: 'Process', contact: 'Contact' };
+    gaPageView(pageNames[page] || page);
+    gaEvent('navigation_click', { page_name: page });
   }, []);
 
   const t = useMemo(() => content?.[language] || fallbackContent[language], [content, language]);
@@ -596,6 +615,7 @@ const MadKoreanWebsite = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* Book a Call 버튼 */}
             <a href="https://calendly.com/pender0207/30min" target="_blank" rel="noopener noreferrer"
+              onClick={() => gaEvent('book_a_call_click', { location: 'navbar' })}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 18px', background: '#ef4444', border: 'none', borderRadius: '9999px', color: '#fff', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none', transition: 'background 0.2s', whiteSpace: 'nowrap' }}
               onMouseEnter={e => e.currentTarget.style.background = '#dc2626'}
               onMouseLeave={e => e.currentTarget.style.background = '#ef4444'}>
